@@ -29,7 +29,6 @@ use yii\log\Logger;
  */
 class Jwt extends Plugin
 {
-
     /**
      * @inheritdoc
      */

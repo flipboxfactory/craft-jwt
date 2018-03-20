@@ -11,7 +11,6 @@ namespace flipbox\craft\jwt\services;
 use Craft;
 use flipbox\craft\jwt\Jwt;
 use Lcobucci\JWT\Token;
-use Yii;
 use yii\base\Component;
 use yii\web\IdentityInterface;
 
@@ -21,7 +20,14 @@ use yii\web\IdentityInterface;
  */
 class Authorization extends Component
 {
+    /**
+     * The CSRF claim identifier
+     */
     const CLAIM_CSRF = 'csrf';
+
+    /**
+     * The Identity claim identifier
+     */
     const CLAIM_IDENTITY = 'jti';
 
     /**
