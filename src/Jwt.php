@@ -50,7 +50,7 @@ class Jwt extends Plugin
     }
 
     /**
-     * @return SettingsModel
+     * @inheritdoc
      */
     public function createSettingsModel()
     {
