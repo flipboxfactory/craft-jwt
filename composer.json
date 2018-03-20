@@ -1,0 +1,35 @@
+{
+  "name": "flipboxfactory/craft-jwt",
+  "description": "JWT Authorization",
+  "version": "1.0.0-rc",
+  "type": "craft-plugin",
+  "require": {
+    "craftcms/cms": "~3.0.0-RC",
+    "lcobucci/jwt": "~3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^5.0",
+    "squizlabs/php_codesniffer": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "flipbox\\craft\\jwt\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "flipbox\\craft\\jwt\\tests\\": "tests/src/"
+    }
+  },
+  "extra": {
+    "name": "JWT Authorization",
+    "handle": "jwt",
+    "developer": "Flipbox Digital",
+    "developerUrl": "https://www.flipboxdigital.com",
+    "class": "flipbox\\craft\\jwt\\Jwt",
+    "schemaVersion": "1.0.0",
+    "components": {
+      "authorization": "flipbox\\craft\\jwt\\services\\Authorization"
+    }
+  }
+}
