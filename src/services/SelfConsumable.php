@@ -147,8 +147,18 @@ class SelfConsumable extends Component
      */
     private function verifyAudience(Token $token): bool
     {
-        return $token->getClaim(self::CLAIM_AUDIENCE) ===
-            Jwt::getInstance()->getSettings()->getSelfConsumableAudience();
+        $audience = $token->getClaim(self::CLAIM_AUDIENCE);
+        if (false === ($audience ===
+            Jwt::getInstance()->getSettings()->getSelfConsumableAudience())
+        ) {
+            Jwt::error(sprintf(
+                "Unable to verify audience: %s",
+                $audience
+            ));
+
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -156,13 +166,23 @@ class SelfConsumable extends Component
      *
      * @param Token $token
      * @return bool
+     * @throws \craft\errors\SiteNotFoundException
      */
     private function verifyIssuer(Token $token): bool
     {
-        return in_array(
-            $token->getClaim(self::CLAIM_ISSUER),
-            Jwt::getInstance()->getSettings()->selfConsumableIssuers
-        );
+        $issuer = $token->getClaim(self::CLAIM_ISSUER);
+        if (false === in_array(
+            $issuer,
+            Jwt::getInstance()->getSettings()->getSelfConsumableIssuers()
+        )) {
+            Jwt::error(sprintf(
+                "Unable to verify issuer: %s",
+                $issuer
+            ));
+
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -171,9 +191,16 @@ class SelfConsumable extends Component
      */
     private function verifyTokenCsrfClaim(Token $token): bool
     {
-        return Craft::$app->getRequest()->validateCsrfToken(
-            $token->getClaim(self::CLAIM_AUDIENCE)
-        );
+        $csrf = $token->getClaim(self::CLAIM_CSRF);
+        if (false === Craft::$app->getRequest()->validateCsrfToken($csrf)) {
+            Jwt::error(sprintf(
+                "Unable to verify CSRF Token: %s",
+                $csrf
+            ));
+
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -184,10 +211,14 @@ class SelfConsumable extends Component
     private function verifyTokenSignature(Token $token, IdentityInterface $identity): bool
     {
         try {
-            return $token->verify(
+            if (false === $token->verify(
                 Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
                 $this->getSignatureKey($identity)
-            );
+            )) {
+                Jwt::error("Unable to verify token signature");
+                return false;
+            }
+            return true;
         } catch (\Exception $e) {
             Jwt::error(sprintf(
                 "Exception caught while trying to verify token signature: %s",

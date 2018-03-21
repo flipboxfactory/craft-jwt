@@ -65,7 +65,7 @@ class Settings extends Model
      *
      * @var array
      */
-    public $selfConsumableIssuers = [];
+    private $selfConsumableIssuers = [];
 
     /** The default target
      *
@@ -78,11 +78,44 @@ class Settings extends Model
      */
     public function getKey(): string
     {
-        if (null === $this->key) {
-            Craft::$app->getConfig()->getGeneral()->securityKey;
-            throw new InvalidArgumentException("Key must be implemented");
+        if (empty($this->key)) {
+            return Craft::$app->getConfig()->getGeneral()->securityKey;
         }
         return $this->key;
+    }
+
+    /**
+     * @param array|null $selfConsumableIssuers
+     * @return $this
+     */
+    public function setSelfConsumableIssuers(array $selfConsumableIssuers = [])
+    {
+        $this->selfConsumableIssuers = $selfConsumableIssuers;
+        return $this;
+    }
+
+    /**
+     * @return array
+     * @throws \craft\errors\SiteNotFoundException
+     */
+    public function getSelfConsumableIssuers(): array
+    {
+        if (empty($this->selfConsumableIssuers)) {
+            return [Craft::$app->getSites()->getCurrentSite()->baseUrl];
+        }
+        return (array)$this->selfConsumableIssuers;
+    }
+
+
+
+    /**
+     * @param string|null $selfConsumableAudience
+     * @return $this
+     */
+    public function setSelfConsumableAudience(string $selfConsumableAudience = null)
+    {
+        $this->selfConsumableAudience = $selfConsumableAudience;
+        return $this;
     }
 
     /**
@@ -95,6 +128,16 @@ class Settings extends Model
             return Craft::$app->getSites()->getCurrentSite()->baseUrl;
         }
         return (string)$this->selfConsumableAudience;
+    }
+
+    /**
+     * @param string|null $issuer
+     * @return $this
+     */
+    public function setIssuer(string $issuer = null)
+    {
+        $this->issuer = $issuer;
+        return $this;
     }
 
     /**
@@ -139,5 +182,21 @@ class Settings extends Model
         );
 
         return $signer;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attributes()
+    {
+        return array_merge(
+            parent::attributes(),
+            [
+                'key',
+                'selfConsumableAudience',
+                'selfConsumableIssuers',
+                'issuer'
+            ]
+        );
     }
 }
