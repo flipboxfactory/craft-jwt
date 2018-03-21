@@ -67,9 +67,9 @@ class Settings extends Model
      */
     private $selfConsumableIssuers = [];
 
-    /** The default target
+    /** The entity issuing the token
      *
-     * @var int
+     * @var string
      */
     private $issuer = null;
 
