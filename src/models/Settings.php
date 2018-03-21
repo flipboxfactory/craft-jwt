@@ -58,7 +58,14 @@ class Settings extends Model
      *
      * @var string
      */
-    private $audience = null;
+    private $selfConsumableAudience = null;
+
+    /**
+     * The available audiences
+     *
+     * @var array
+     */
+    public $selfConsumableAudiences = [];
 
     /** The default target
      *
@@ -82,12 +89,12 @@ class Settings extends Model
      * @return string
      * @throws \craft\errors\SiteNotFoundException
      */
-    public function getAudience(): string
+    public function getSelfConsumableAudience(): string
     {
-        if (null === $this->audience) {
+        if (null === $this->selfConsumableAudience) {
             return Craft::$app->getSites()->getCurrentSite()->baseUrl;
         }
-        return (string)$this->audience;
+        return (string)$this->selfConsumableAudience;
     }
 
     /**

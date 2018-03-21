@@ -29,7 +29,7 @@
     "class": "flipbox\\craft\\jwt\\Jwt",
     "schemaVersion": "1.0.0",
     "components": {
-      "authorization": "flipbox\\craft\\jwt\\services\\Authorization"
+      "selfConsumable": "flipbox\\craft\\jwt\\services\\SelfConsumable"
     }
   }
 }

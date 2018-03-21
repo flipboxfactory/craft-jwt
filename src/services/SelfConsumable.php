@@ -9,6 +9,7 @@
 namespace flipbox\craft\jwt\services;
 
 use Craft;
+use craft\elements\User;
 use flipbox\craft\jwt\Jwt;
 use Lcobucci\JWT\Token;
 use yii\base\Component;
@@ -18,7 +19,7 @@ use yii\web\IdentityInterface;
  * @author Flipbox Factory <hello@flipboxfactory.com>
  * @since 1.0.0
  */
-class Authorization extends Component
+class SelfConsumable extends Component
 {
     /**
      * The CSRF claim identifier
@@ -93,24 +94,12 @@ class Authorization extends Component
             return null;
         }
 
-        if (($validate && !$this->validateToken($token)) ||
+        if (($validate && !Jwt::getInstance()->validateToken($token)) ||
             ($verify && !$this->verifyToken($token))) {
             return null;
         }
 
         return $token;
-    }
-
-    /**
-     * @param Token $token
-     * @param int|null $currentTime
-     * @return bool
-     */
-    public function validateToken(Token $token, int $currentTime = null): bool
-    {
-        return $token->validate(
-            Jwt::getInstance()->getValidationData($currentTime)
-        );
     }
 
     /**
@@ -174,7 +163,8 @@ class Authorization extends Component
      */
     private function getSignatureKey(IdentityInterface $identity)
     {
-        return Jwt::getInstance()->getSettings()->getKey() . '.' . $identity->getId();
+        $id = $identity instanceof User ? $identity->uid : $identity->getId();
+        return Jwt::getInstance()->getSettings()->getKey() . '.' . $id;
     }
 
     /**
@@ -185,7 +175,7 @@ class Authorization extends Component
     private function resolveAudience(string $audience = null): string
     {
         if ($audience === null) {
-            $audience = Jwt::getInstance()->getSettings()->getAudience();
+            $audience = Jwt::getInstance()->getSettings()->getSelfConsumableAudience();
         }
 
         return (string)$audience;

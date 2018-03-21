@@ -12,11 +12,13 @@ use Craft;
 use craft\base\Plugin;
 use craft\web\twig\variables\CraftVariable;
 use flipbox\craft\jwt\models\Settings as SettingsModel;
+use flipbox\craft\jwt\services\SelfConsumable;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Claim\Factory as ClaimFactory;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Parsing\Decoder;
 use Lcobucci\JWT\Parsing\Encoder;
+use Lcobucci\JWT\Token;
 use Lcobucci\JWT\ValidationData;
 use yii\base\Event;
 use yii\log\Logger;
@@ -51,7 +53,7 @@ class Jwt extends Plugin
     /**
      * @inheritdoc
      */
-    public function createSettingsModel()
+    public function createSettingsModel(): SettingsModel
     {
         return new SettingsModel();
     }
@@ -61,13 +63,16 @@ class Jwt extends Plugin
      *******************************************/
 
     /**
-     * @return services\Authorization
+     * @return services\SelfConsumable
      */
-    public function getAuthorization()
+    public function getSelfConsumable(): SelfConsumable
     {
         return $this->get('authorization');
     }
 
+    /*******************************************
+     * JWT
+     *******************************************/
 
     /**
      * @param Encoder|null $encoder
@@ -76,7 +81,7 @@ class Jwt extends Plugin
      * @see [[Lcobucci\JWT\Builder::__construct()]]
      * @return Builder
      */
-    public function getBuilder(Encoder $encoder = null, ClaimFactory $claimFactory = null)
+    public function getBuilder(Encoder $encoder = null, ClaimFactory $claimFactory = null): Builder
     {
         return new Builder($encoder, $claimFactory);
     }
@@ -88,7 +93,7 @@ class Jwt extends Plugin
      * @see [[Lcobucci\JWT\Parser::__construct()]]
      * @return Parser
      */
-    public function getParser(Decoder $decoder = null, ClaimFactory $claimFactory = null)
+    public function getParser(Decoder $decoder = null, ClaimFactory $claimFactory = null): Parser
     {
         return new Parser($decoder, $claimFactory);
     }
@@ -99,9 +104,21 @@ class Jwt extends Plugin
      * @see [[Lcobucci\JWT\ValidationData::__construct()]]
      * @return ValidationData
      */
-    public function getValidationData(int $currentTime = null)
+    public function getValidationData(int $currentTime = null): ValidationData
     {
         return new ValidationData($currentTime);
+    }
+
+    /**
+     * @param Token $token
+     * @param int|null $currentTime
+     * @return bool
+     */
+    public function validateToken(Token $token, int $currentTime = null): bool
+    {
+        return $token->validate(
+            $this->getValidationData($currentTime)
+        );
     }
 
 
