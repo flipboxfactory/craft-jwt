@@ -27,6 +27,11 @@ class SelfConsumable extends Component
     const CLAIM_CSRF = 'csrf';
 
     /**
+     * The Audience claim identifier
+     */
+    const CLAIM_AUDIENCE = 'aud';
+
+    /**
      * The Identity claim identifier
      */
     const CLAIM_IDENTITY = 'jti';
@@ -113,6 +118,7 @@ class SelfConsumable extends Component
         }
 
         return $this->verifyTokenCsrfClaim($token) &&
+            $this->verifyAudience($token) &&
             $this->verifyTokenSignature($token, $identity);
     }
 
@@ -129,10 +135,22 @@ class SelfConsumable extends Component
      * @param Token $token
      * @return bool
      */
+    private function verifyAudience(Token $token): bool
+    {
+        return in_array(
+            $token->getClaim(self::CLAIM_AUDIENCE),
+            Jwt::getInstance()->getSettings()->selfConsumableAudiences
+        );
+    }
+
+    /**
+     * @param Token $token
+     * @return bool
+     */
     private function verifyTokenCsrfClaim(Token $token): bool
     {
         return Craft::$app->getRequest()->validateCsrfToken(
-            $token->getClaim(self::CLAIM_CSRF)
+            $token->getClaim(self::CLAIM_AUDIENCE)
         );
     }
 
