@@ -67,7 +67,7 @@ class Jwt extends Plugin
      */
     public function getSelfConsumable(): SelfConsumable
     {
-        return $this->get('authorization');
+        return $this->get('selfConsumable');
     }
 
     /*******************************************
