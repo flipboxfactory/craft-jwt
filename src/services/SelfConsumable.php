@@ -147,7 +147,8 @@ class SelfConsumable extends Component
      */
     private function verifyAudience(Token $token): bool
     {
-        return $token->getClaim(self::CLAIM_AUDIENCE === Jwt::getInstance()->getSettings()->getSelfConsumableAudience();
+        return $token->getClaim(self::CLAIM_AUDIENCE) ===
+            Jwt::getInstance()->getSettings()->getSelfConsumableAudience();
     }
 
     /**
