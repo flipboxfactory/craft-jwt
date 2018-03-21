@@ -73,6 +73,11 @@ class Settings extends Model
      */
     private $issuer = null;
 
+
+    /*******************************************
+     * KEY
+     *******************************************/
+
     /**
      * @return string
      */
@@ -84,51 +89,10 @@ class Settings extends Model
         return $this->key;
     }
 
-    /**
-     * @param array|null $selfConsumableIssuers
-     * @return $this
-     */
-    public function setSelfConsumableIssuers(array $selfConsumableIssuers = [])
-    {
-        $this->selfConsumableIssuers = $selfConsumableIssuers;
-        return $this;
-    }
 
-    /**
-     * @return array
-     * @throws \craft\errors\SiteNotFoundException
-     */
-    public function getSelfConsumableIssuers(): array
-    {
-        if (empty($this->selfConsumableIssuers)) {
-            return [Craft::$app->getSites()->getCurrentSite()->baseUrl];
-        }
-        return (array)$this->selfConsumableIssuers;
-    }
-
-
-
-    /**
-     * @param string|null $selfConsumableAudience
-     * @return $this
-     */
-    public function setSelfConsumableAudience(string $selfConsumableAudience = null)
-    {
-        $this->selfConsumableAudience = $selfConsumableAudience;
-        return $this;
-    }
-
-    /**
-     * @return string
-     * @throws \craft\errors\SiteNotFoundException
-     */
-    public function getSelfConsumableAudience(): string
-    {
-        if (null === $this->selfConsumableAudience) {
-            return Craft::$app->getSites()->getCurrentSite()->baseUrl;
-        }
-        return (string)$this->selfConsumableAudience;
-    }
+    /*******************************************
+     * ISSUER
+     *******************************************/
 
     /**
      * @param string|null $issuer
@@ -151,6 +115,11 @@ class Settings extends Model
         }
         return (string)$this->issuer;
     }
+
+
+    /*******************************************
+     * SIGNER
+     *******************************************/
 
     /**
      * Creates a Signer class based on the configured algorithm
@@ -183,6 +152,65 @@ class Settings extends Model
 
         return $signer;
     }
+
+
+    /*******************************************
+     * SELF CONSUMABLE ISSUER
+     *******************************************/
+
+    /**
+     * @param array|null $selfConsumableIssuers
+     * @return $this
+     */
+    public function setSelfConsumableIssuers(array $selfConsumableIssuers = [])
+    {
+        $this->selfConsumableIssuers = $selfConsumableIssuers;
+        return $this;
+    }
+
+    /**
+     * @return array
+     * @throws \craft\errors\SiteNotFoundException
+     */
+    public function getSelfConsumableIssuers(): array
+    {
+        if (empty($this->selfConsumableIssuers)) {
+            return [Craft::$app->getSites()->getCurrentSite()->baseUrl];
+        }
+        return (array)$this->selfConsumableIssuers;
+    }
+
+
+    /*******************************************
+     * SELF CONSUMABLE AUDIENCE
+     *******************************************/
+
+    /**
+     * @param string|null $selfConsumableAudience
+     * @return $this
+     */
+    public function setSelfConsumableAudience(string $selfConsumableAudience = null)
+    {
+        $this->selfConsumableAudience = $selfConsumableAudience;
+        return $this;
+    }
+
+    /**
+     * @return string
+     * @throws \craft\errors\SiteNotFoundException
+     */
+    public function getSelfConsumableAudience(): string
+    {
+        if (null === $this->selfConsumableAudience) {
+            return Craft::$app->getSites()->getCurrentSite()->baseUrl;
+        }
+        return (string)$this->selfConsumableAudience;
+    }
+
+
+    /*******************************************
+     * ATTRIBUTES
+     *******************************************/
 
     /**
      * @inheritdoc

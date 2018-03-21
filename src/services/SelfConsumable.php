@@ -148,9 +148,7 @@ class SelfConsumable extends Component
     private function verifyAudience(Token $token): bool
     {
         $audience = $token->getClaim(self::CLAIM_AUDIENCE);
-        if (false === ($audience ===
-            Jwt::getInstance()->getSettings()->getSelfConsumableAudience())
-        ) {
+        if (false === ($audience === Craft::$app->getSites()->getCurrentSite()->baseUrl)) {
             Jwt::error(sprintf(
                 "Unable to verify audience: %s",
                 $audience
