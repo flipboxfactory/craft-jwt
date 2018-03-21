@@ -1,5 +1,15 @@
 Changelog
 =========
+
+## [1.0.0-rc.2] - 2018-03-21
+### Changed
+- Authorization server name to SelfConsumable as it's targeted and more appropriate
+
+### Added
+- Logging to SelfConsumable verifications
+- Issuer, Audience verifications
+- Settings for SelfConsumable verifications
+
 ## [1.0.0-rc.1] - 2018-03-20
 ### Added
 - icons
