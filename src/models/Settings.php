@@ -65,7 +65,7 @@ class Settings extends Model
      *
      * @var array
      */
-    public $selfConsumableAudiences = [];
+    public $selfConsumableIssuers = [];
 
     /** The default target
      *

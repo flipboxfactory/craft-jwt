@@ -32,6 +32,11 @@ class SelfConsumable extends Component
     const CLAIM_AUDIENCE = 'aud';
 
     /**
+     * The Issuer claim identifier
+     */
+    const CLAIM_ISSUER = 'iss';
+
+    /**
      * The Identity claim identifier
      */
     const CLAIM_IDENTITY = 'jti';
@@ -71,6 +76,7 @@ class SelfConsumable extends Component
      * This
      * @param string $token
      * @return null|IdentityInterface
+     * @throws \craft\errors\SiteNotFoundException
      */
     public function claim(string $token)
     {
@@ -86,6 +92,7 @@ class SelfConsumable extends Component
      * @param bool $validate
      * @param bool $verify
      * @return Token|null
+     * @throws \craft\errors\SiteNotFoundException
      */
     public function parse(string $token, bool $validate = true, bool $verify = true)
     {
@@ -110,6 +117,7 @@ class SelfConsumable extends Component
     /**
      * @param Token $token
      * @return bool
+     * @throws \craft\errors\SiteNotFoundException
      */
     public function verifyToken(Token $token): bool
     {
@@ -118,6 +126,7 @@ class SelfConsumable extends Component
         }
 
         return $this->verifyTokenCsrfClaim($token) &&
+            $this->verifyIssuer($token) &&
             $this->verifyAudience($token) &&
             $this->verifyTokenSignature($token, $identity);
     }
@@ -134,12 +143,24 @@ class SelfConsumable extends Component
     /**
      * @param Token $token
      * @return bool
+     * @throws \craft\errors\SiteNotFoundException
      */
     private function verifyAudience(Token $token): bool
     {
+        return $token->getClaim(self::CLAIM_AUDIENCE === Jwt::getInstance()->getSettings()->getSelfConsumableAudience();
+    }
+
+    /**
+     * Verify that the issuer is one we can accept from
+     *
+     * @param Token $token
+     * @return bool
+     */
+    private function verifyIssuer(Token $token): bool
+    {
         return in_array(
-            $token->getClaim(self::CLAIM_AUDIENCE),
-            Jwt::getInstance()->getSettings()->selfConsumableAudiences
+            $token->getClaim(self::CLAIM_ISSUER),
+            Jwt::getInstance()->getSettings()->selfConsumableIssuers
         );
     }
 
