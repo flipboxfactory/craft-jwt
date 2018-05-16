@@ -39,6 +39,10 @@ class JwtHttpBearerAuth extends AuthMethod
             return null;
         }
 
+        if (!isset($matches[1])) {
+            $this->handleFailure($response);
+        }
+
         if (null === ($identity = Jwt::getInstance()->getSelfConsumable()->claim($matches[1]))) {
             $this->handleFailure($response);
         }
