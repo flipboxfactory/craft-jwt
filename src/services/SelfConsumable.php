@@ -170,9 +170,9 @@ class SelfConsumable extends Component
     {
         $issuer = $token->getClaim(self::CLAIM_ISSUER);
         if (false === in_array(
-                $issuer,
-                Jwt::getInstance()->getSettings()->getSelfConsumableIssuers()
-            )) {
+            $issuer,
+            Jwt::getInstance()->getSettings()->getSelfConsumableIssuers()
+        )) {
             Jwt::error(sprintf(
                 "Unable to verify issuer: %s",
                 $issuer
@@ -210,9 +210,9 @@ class SelfConsumable extends Component
     {
         try {
             if (false === $token->verify(
-                    Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
-                    $this->getSignatureKey($identity)
-                )) {
+                Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
+                $this->getSignatureKey($identity)
+            )) {
                 Jwt::error("Unable to verify token signature");
                 return false;
             }
