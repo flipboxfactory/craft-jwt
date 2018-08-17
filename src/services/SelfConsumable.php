@@ -57,7 +57,7 @@ class SelfConsumable extends Component
         int $expiration = null
     ) {
         if (null === ($identity = $this->resolveUser($user))) {
-            return null;
+            $identity = new User();
         }
 
         return Jwt::getInstance()->getBuilder()
@@ -75,13 +75,13 @@ class SelfConsumable extends Component
     /**
      * This
      * @param string $token
-     * @return null|IdentityInterface
+     * @return bool|null|IdentityInterface
      * @throws \craft\errors\SiteNotFoundException
      */
     public function claim(string $token)
     {
         if (null === ($token = $this->parse($token))) {
-            return null;
+            return false;
         }
 
         return $this->tokenIdentity($token);
@@ -122,7 +122,7 @@ class SelfConsumable extends Component
     public function verifyToken(Token $token): bool
     {
         if (null === ($identity = $this->resolveUser($token->getClaim(self::CLAIM_IDENTITY)))) {
-            return false;
+            $identity = new User();
         }
 
         return $this->verifyTokenCsrfClaim($token) &&
@@ -170,9 +170,9 @@ class SelfConsumable extends Component
     {
         $issuer = $token->getClaim(self::CLAIM_ISSUER);
         if (false === in_array(
-            $issuer,
-            Jwt::getInstance()->getSettings()->getSelfConsumableIssuers()
-        )) {
+                $issuer,
+                Jwt::getInstance()->getSettings()->getSelfConsumableIssuers()
+            )) {
             Jwt::error(sprintf(
                 "Unable to verify issuer: %s",
                 $issuer
@@ -210,9 +210,9 @@ class SelfConsumable extends Component
     {
         try {
             if (false === $token->verify(
-                Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
-                $this->getSignatureKey($identity)
-            )) {
+                    Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
+                    $this->getSignatureKey($identity)
+                )) {
                 Jwt::error("Unable to verify token signature");
                 return false;
             }
@@ -253,11 +253,12 @@ class SelfConsumable extends Component
     /**
      * @param int|null $expiration
      * @return int
+     * @throws \yii\base\InvalidConfigException
      */
     private function resolveTokenExpiration(int $expiration = null): int
     {
         if ($expiration === null) {
-            $expiration = Jwt::getInstance()->getSettings()->tokenExpiration;
+            $expiration = Jwt::getInstance()->getSettings()->getSelfConsumableTokenDuration();
         }
 
         return time() + (int)$expiration;

@@ -9,6 +9,7 @@
 namespace flipbox\craft\jwt\models;
 
 use Craft;
+use craft\helpers\ConfigHelper;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Signer\Hmac\Sha384;
@@ -48,12 +49,6 @@ class Settings extends Model
     private $key;
 
     /**
-     * The default token Expiration
-     * @var int
-     */
-    public $tokenExpiration = 3600;
-
-    /**
      * The default audience
      *
      * @var string
@@ -72,6 +67,13 @@ class Settings extends Model
      * @var string
      */
     private $issuer = null;
+
+    /**
+     * The self consumable token duration.  Defaults to GeneralConfig::$userSessionDuration
+     *
+     * @var int
+     */
+    private $selfConsumableTokenDuration;
 
 
     /*******************************************
@@ -155,6 +157,23 @@ class Settings extends Model
 
 
     /*******************************************
+     * SELF CONSUMABLE TOKEN DURATION
+     *******************************************/
+
+    /**
+     * @return int
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function getSelfConsumableTokenDuration(): int
+    {
+        if ($this->selfConsumableTokenDuration === null) {
+            $this->selfConsumableTokenDuration = Craft::$app->getConfig()->getGeneral()->userSessionDuration;
+        };
+
+        return ConfigHelper::durationInSeconds($this->selfConsumableTokenDuration);
+    }
+
+    /*******************************************
      * SELF CONSUMABLE ISSUER
      *******************************************/
 
@@ -207,6 +226,17 @@ class Settings extends Model
         return (string)$this->selfConsumableAudience;
     }
 
+    /**
+     * @param int $duration
+     * @return $this
+     *
+     * @deprecated
+     */
+    public function setTokenExpiration(int $duration)
+    {
+        $this->selfConsumableTokenDuration = $duration;
+        return $this;
+    }
 
     /*******************************************
      * ATTRIBUTES
@@ -221,6 +251,7 @@ class Settings extends Model
             parent::attributes(),
             [
                 'key',
+                'selfConsumableTokenExpiration',
                 'selfConsumableAudience',
                 'selfConsumableIssuers',
                 'issuer'

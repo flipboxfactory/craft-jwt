@@ -8,8 +8,10 @@
 
 namespace flipbox\craft\jwt\filters;
 
+use craft\elements\User;
 use flipbox\craft\jwt\Jwt;
 use yii\filters\auth\AuthMethod;
+use yii\web\IdentityInterface;
 
 /**
  * @author Flipbox Factory <hello@flipboxfactory.com>
@@ -43,12 +45,28 @@ class JwtHttpBearerAuth extends AuthMethod
             $this->handleFailure($response);
         }
 
-        if (null === ($identity = Jwt::getInstance()->getSelfConsumable()->claim($matches[1]))) {
+        if (false === ($identity = Jwt::getInstance()->getSelfConsumable()->claim($matches[1]))) {
             $this->handleFailure($response);
         }
 
-        $user->login($identity);
-        return $identity;
+        if ($this->canLogin($identity)) {
+            $user->login($identity);
+        }
+
+        return $identity instanceof IdentityInterface ? $identity : true;
+    }
+
+    /**
+     * @param IdentityInterface $identity
+     * @return bool
+     */
+    protected function canLogin(IdentityInterface $identity = null): bool
+    {
+        if ($identity === null || empty($identity->getId())) {
+            return false;
+        }
+
+        return $identity instanceof User && $identity->getStatus() === User::STATUS_ENABLED;
     }
 
     /**
@@ -58,7 +76,7 @@ class JwtHttpBearerAuth extends AuthMethod
     {
         $response->getHeaders()->set(
             'WWW-Authenticate',
-            "{$this->schema} realm=\"{$this->realm}\", error=\"invalid_token\",".
+            "{$this->schema} realm=\"{$this->realm}\", error=\"invalid_token\"," .
             " error_description=\"The access token invalid or expired\""
         );
     }

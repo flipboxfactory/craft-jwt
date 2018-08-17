@@ -1,5 +1,11 @@
 Changelog
 =========
+## Unreleased
+### Changed
+- Self consumable service will now return a token even when a user is not logged in.
+
+### Removed
+- `Settings::$tokenDuration` has been deprecated.  Use `Settings::getSelfConsumableTokenDurationn()`
 
 ## 1.0.0-rc.3 - 2018-05-16
 ### Fixed
