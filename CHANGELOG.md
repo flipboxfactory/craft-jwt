@@ -1,6 +1,6 @@
 Changelog
 =========
-## Unreleased
+## 1.0.0-rc.4 - 2018-08-19
 ### Changed
 - Self consumable service will now return a token even when a user is not logged in.
 
