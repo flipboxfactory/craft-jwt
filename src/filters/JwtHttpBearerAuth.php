@@ -33,6 +33,9 @@ class JwtHttpBearerAuth extends AuthMethod
 
     /**
      * @inheritdoc
+     *
+     * @throws \craft\errors\SiteNotFoundException
+     * @throws \yii\web\UnauthorizedHttpException
      */
     public function authenticate($user, $request, $response)
     {
@@ -41,10 +44,17 @@ class JwtHttpBearerAuth extends AuthMethod
             return null;
         }
 
+        // Header does not match schema
+        if (empty($matches)) {
+            return null;
+        }
+
+        // Header schema is a match, but no token
         if (!isset($matches[1])) {
             $this->handleFailure($response);
         }
 
+        // JWT token could not be claimed
         if (false === ($identity = Jwt::getInstance()->getSelfConsumable()->claim($matches[1]))) {
             $this->handleFailure($response);
         }
@@ -66,7 +76,7 @@ class JwtHttpBearerAuth extends AuthMethod
             return false;
         }
 
-        return $identity instanceof User && $identity->getStatus() === User::STATUS_ENABLED;
+        return $identity instanceof User && $identity->getStatus() === User::STATUS_ACTIVE;
     }
 
     /**
