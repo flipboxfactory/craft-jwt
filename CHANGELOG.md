@@ -1,6 +1,6 @@
 Changelog
 =========
-## Unreleased
+## 1.0.0-rc.5 - 2018-10-29
 ### Fixed
 - JwtHttpBearerAuth behavior was evaluating the incorrect 'active' status.
 
