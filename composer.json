@@ -1,11 +1,11 @@
 {
   "name": "flipboxfactory/craft-jwt",
   "description": "JWT Authorization",
-  "version": "1.0.0-rc.5",
+  "version": "1.0.0-rc.6",
   "type": "craft-plugin",
   "require": {
-    "craftcms/cms": "~3.0.0-RC",
-    "lcobucci/jwt": "~3.0"
+    "craftcms/cms": "^3.0.0",
+    "lcobucci/jwt": "^3.0"
   },
   "require-dev": {
     "phpunit/phpunit": "^5.0",
