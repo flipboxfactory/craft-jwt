@@ -1,5 +1,13 @@
 Changelog
 =========
+
+## UNRELEASED
+### Added
+- Route token handling, you can create and execute a route based on a jwt token
+
+### Changed
+- `SelfConsumable` service class was renamed to `Identity`
+
 ## 1.0.0-rc.5 - 2018-10-29
 ### Fixed
 - JwtHttpBearerAuth behavior was evaluating the incorrect 'active' status.
