@@ -200,6 +200,11 @@ class Settings extends Model
      */
     public function getSelfConsumableTokenDuration(): int
     {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::getSelfConsumableTokenDuration',
+            self::class . '::getSelfConsumableTokenDuration() has been deprecated. ' .
+            'Use getIdentityTokenDuration() instead.'
+        );
         return $this->getIdentityTokenDuration();
     }
 
@@ -225,6 +230,10 @@ class Settings extends Model
      */
     public function setSelfConsumableIssuers(array $issuers = [])
     {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::setSelfConsumableIssuers',
+            self::class . '::setSelfConsumableIssuers() has been deprecated. Use setIdentityIssuers() instead.'
+        );
         return $this->setIdentityIssuers($issuers);
     }
 
@@ -246,6 +255,10 @@ class Settings extends Model
      */
     public function getSelfConsumableIssuers(): array
     {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::getSelfConsumableIssuers',
+            self::class . '::getSelfConsumableIssuers() has been deprecated. Use getIdentityIssuers() instead.'
+        );
         return $this->getIdentityIssuers();
     }
 
@@ -270,6 +283,10 @@ class Settings extends Model
      */
     public function setSelfConsumableAudience(string $audience = null)
     {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::setSelfConsumableAudience',
+            self::class . '::setSelfConsumableAudience() has been deprecated. Use setIdentityAudience() instead.'
+        );
         return $this->setIdentityAudience($audience);
     }
 
@@ -291,6 +308,10 @@ class Settings extends Model
      */
     public function getSelfConsumableAudience(): string
     {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::getSelfConsumableAudience',
+            self::class . '::getSelfConsumableAudience() has been deprecated. Use getIdentityAudience() instead.'
+        );
         return $this->getIdentityAudience();
     }
 

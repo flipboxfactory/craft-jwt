@@ -26,6 +26,9 @@ use yii\log\Logger;
  * @author Flipbox Factory <hello@flipboxfactory.com>
  * @since 1.0.0
  *
+ * @property services\Identity identity
+ * @property services\Route route
+ *
  * @method SettingsModel getSettings()
  */
 class Jwt extends Plugin
@@ -101,6 +104,10 @@ class Jwt extends Plugin
      */
     public function getSelfConsumable(): services\Identity
     {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::getSelfConsumable',
+            self::class . '::getSelfConsumable() has been deprecated. Use getIdentity() instead.'
+        );
         return $this->getIdentity();
     }
 

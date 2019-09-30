@@ -55,7 +55,7 @@ class JwtHttpBearerAuth extends AuthMethod
         }
 
         // JWT token could not be claimed
-        if (false === ($identity = Jwt::getInstance()->getSelfConsumable()->claim($matches[1]))) {
+        if (false === ($identity = Jwt::getInstance()->getIdentity()->claim($matches[1]))) {
             $this->handleFailure($response);
         }
 
