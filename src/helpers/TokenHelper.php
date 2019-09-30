@@ -107,9 +107,9 @@ class TokenHelper
     {
         try {
             if (false === $token->verify(
-                    Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
-                    TokenHelper::getSignatureKey($identity)
-                )) {
+                Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
+                TokenHelper::getSignatureKey($identity)
+            )) {
                 Jwt::error("Unable to verify token signature");
                 return false;
             }
@@ -154,9 +154,9 @@ class TokenHelper
     {
         $issuer = $token->getClaim(TokenHelper::CLAIM_ISSUER);
         if (false === in_array(
-                $issuer,
-                $issuers
-            )) {
+            $issuer,
+            $issuers
+        )) {
             Jwt::error(sprintf(
                 "Unable to verify issuer: %s",
                 $issuer

@@ -30,7 +30,7 @@ class RouteAction extends Action
      */
     public function run(string $token)
     {
-        if(false === ($route = Jwt::getInstance()->getRoute()->claim($token))) {
+        if (false === ($route = Jwt::getInstance()->getRoute()->claim($token))) {
             throw new NotFoundHttpException("Invalid token.");
         }
 
