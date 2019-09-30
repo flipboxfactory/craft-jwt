@@ -8,6 +8,7 @@
 
 namespace flipbox\craft\jwt\filters;
 
+use Craft;
 use craft\elements\User;
 use flipbox\craft\jwt\Jwt;
 use yii\filters\auth\AuthMethod;
@@ -30,6 +31,11 @@ class JwtHttpBearerAuth extends AuthMethod
      * @var string Authorization header schema, default 'Bearer'
      */
     public $schema = 'Bearer';
+
+    /**
+     * @var bool Perform a full login operation, default `false`
+     */
+    public $login = false;
 
     /**
      * @inheritdoc
@@ -59,8 +65,12 @@ class JwtHttpBearerAuth extends AuthMethod
             $this->handleFailure($response);
         }
 
-        if ($this->canLogin($identity)) {
-            $user->login($identity);
+        if ($this->validIdentity($identity)) {
+            if ($this->login === true) {
+                $user->login($identity);
+            } else {
+                Craft::$app->getUser()->setIdentity($identity);
+            }
         }
 
         return $identity instanceof IdentityInterface ? $identity : true;
@@ -69,8 +79,19 @@ class JwtHttpBearerAuth extends AuthMethod
     /**
      * @param IdentityInterface $identity
      * @return bool
+     *
+     * @deprecated
      */
     protected function canLogin(IdentityInterface $identity = null): bool
+    {
+        return $this->validIdentity($identity);
+    }
+
+    /**
+     * @param IdentityInterface $identity
+     * @return bool
+     */
+    protected function validIdentity(IdentityInterface $identity = null): bool
     {
         if ($identity === null || empty($identity->getId())) {
             return false;

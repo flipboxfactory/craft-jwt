@@ -9,6 +9,7 @@ Changelog
 
 ### Changed
 - `SelfConsumable` service class was renamed to `Identity`
+- The Authentication filter no longer performs a full login unless explicitly told to
 
 ## 1.0.0-rc.5 - 2018-10-29
 ### Fixed
