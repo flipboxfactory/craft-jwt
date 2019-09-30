@@ -101,7 +101,7 @@ class Identity extends Component
         }
 
         return TokenHelper::verifyTokenCsrfClaim($token) &&
-            TokenHelper::verifyIssuer($token, Jwt::getInstance()->getSettings()->getSelfConsumableIssuers()) &&
+            TokenHelper::verifyIssuer($token, Jwt::getInstance()->getSettings()->getIdentityIssuers()) &&
             TokenHelper::verifyAudience($token) &&
             TokenHelper::verifyTokenSignature($token, $identity);
     }
@@ -123,7 +123,7 @@ class Identity extends Component
     private function resolveAudience(string $audience = null): string
     {
         if ($audience === null) {
-            $audience = Jwt::getInstance()->getSettings()->getSelfConsumableAudience();
+            $audience = Jwt::getInstance()->getSettings()->getIdentityAudience();
         }
 
         return (string)$audience;
@@ -137,7 +137,7 @@ class Identity extends Component
     private function resolveTokenExpiration(int $expiration = null): int
     {
         if ($expiration === null) {
-            $expiration = Jwt::getInstance()->getSettings()->getSelfConsumableTokenDuration();
+            $expiration = Jwt::getInstance()->getSettings()->getIdentityTokenDuration();
         }
 
         return time() + (int)$expiration;

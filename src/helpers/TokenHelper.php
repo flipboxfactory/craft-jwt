@@ -77,7 +77,7 @@ class TokenHelper
             return $result;
         }
 
-        return $result . '.' . $identity instanceof User ? $identity->uid : $identity->getId();
+        return $result . '.' . ($identity instanceof User ? $identity->uid : $identity->getId());
     }
 
     /**
