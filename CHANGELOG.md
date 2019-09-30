@@ -1,5 +1,16 @@
 Changelog
 =========
+
+## 1.0.0 - 2019-09-30
+> {warning} The 'SelfConsumable' service class has been renamed to 'Identity'.  Please change any references in your Plugins, Module or TWIG - such as `craft.jwt.selfConsumable.*` to `craft.jwt.identity.*`
+
+### Added
+- Route token handling, you can create and execute a route based on a jwt token
+
+### Changed
+- `SelfConsumable` service class was renamed to `Identity`
+- The Authentication filter no longer performs a full login unless explicitly told to
+
 ## 1.0.0-rc.5 - 2018-10-29
 ### Fixed
 - JwtHttpBearerAuth behavior was evaluating the incorrect 'active' status.

@@ -48,20 +48,6 @@ class Settings extends Model
      */
     private $key;
 
-    /**
-     * The default audience
-     *
-     * @var string
-     */
-    private $selfConsumableAudience = null;
-
-    /**
-     * The available audiences
-     *
-     * @var array
-     */
-    private $selfConsumableIssuers = [];
-
     /** The entity issuing the token
      *
      * @var string
@@ -69,11 +55,47 @@ class Settings extends Model
     private $issuer = null;
 
     /**
+     * The default audience
+     *
+     * @var string
+     */
+    private $identityAudience = null;
+
+    /**
+     * The available audiences
+     *
+     * @var array
+     */
+    private $identityIssuers = [];
+
+    /**
      * The self consumable token duration.  Defaults to GeneralConfig::$userSessionDuration
      *
      * @var int
      */
-    private $selfConsumableTokenDuration;
+    private $identityTokenDuration;
+
+
+    /**
+     * The default audience
+     *
+     * @var string
+     */
+    private $routeAudience = null;
+
+    /**
+     * The available audiences
+     *
+     * @var array
+     */
+    private $routeIssuers = [];
+
+    /**
+     * The self consumable token duration.  Defaults to GeneralConfig::$userSessionDuration
+     *
+     * @var int
+     */
+    private $routeTokenDuration;
 
 
     /*******************************************
@@ -113,7 +135,7 @@ class Settings extends Model
     public function getIssuer(): string
     {
         if (null === $this->issuer) {
-            return Craft::$app->getSites()->getCurrentSite()->baseUrl;
+            return Craft::$app->getSites()->getCurrentSite()->getBaseUrl();
         }
         return (string)$this->issuer;
     }
@@ -157,60 +179,189 @@ class Settings extends Model
 
 
     /*******************************************
-     * SELF CONSUMABLE TOKEN DURATION
+     * IDENTITY
      *******************************************/
+
+    /**
+     * @param $duration
+     * @return $this
+     */
+    public function setIdentityTokenDuration($duration)
+    {
+        $this->identityTokenDuration = $duration;
+        return $this;
+    }
+
+    /**
+     * @return int
+     * @throws \yii\base\InvalidConfigException
+     *
+     * @deprecated
+     */
+    public function getSelfConsumableTokenDuration(): int
+    {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::getSelfConsumableTokenDuration',
+            self::class . '::getSelfConsumableTokenDuration() has been deprecated. ' .
+            'Use getIdentityTokenDuration() instead.'
+        );
+        return $this->getIdentityTokenDuration();
+    }
 
     /**
      * @return int
      * @throws \yii\base\InvalidConfigException
      */
-    public function getSelfConsumableTokenDuration(): int
+    public function getIdentityTokenDuration(): int
     {
-        if ($this->selfConsumableTokenDuration === null) {
-            $this->selfConsumableTokenDuration = Craft::$app->getConfig()->getGeneral()->userSessionDuration;
+        if ($this->identityTokenDuration === null) {
+            $this->identityTokenDuration = Craft::$app->getConfig()->getGeneral()->userSessionDuration;
         };
 
-        return ConfigHelper::durationInSeconds($this->selfConsumableTokenDuration);
+        return ConfigHelper::durationInSeconds($this->identityTokenDuration);
     }
 
-    /*******************************************
-     * SELF CONSUMABLE ISSUER
-     *******************************************/
 
     /**
-     * @param array|null $selfConsumableIssuers
+     * @param array|null $issuers
+     * @return $this
+     *
+     * @deprecated
+     */
+    public function setSelfConsumableIssuers(array $issuers = [])
+    {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::setSelfConsumableIssuers',
+            self::class . '::setSelfConsumableIssuers() has been deprecated. Use setIdentityIssuers() instead.'
+        );
+        return $this->setIdentityIssuers($issuers);
+    }
+
+    /**
+     * @param array|null $issuers
      * @return $this
      */
-    public function setSelfConsumableIssuers(array $selfConsumableIssuers = [])
+    public function setIdentityIssuers(array $issuers = [])
     {
-        $this->selfConsumableIssuers = $selfConsumableIssuers;
+        $this->identityIssuers = $issuers;
         return $this;
     }
 
     /**
      * @return array
      * @throws \craft\errors\SiteNotFoundException
+     *
+     * @deprecated
      */
     public function getSelfConsumableIssuers(): array
     {
-        if (empty($this->selfConsumableIssuers)) {
-            return [Craft::$app->getSites()->getCurrentSite()->baseUrl];
+        Craft::$app->getDeprecator()->log(
+            self::class . '::getSelfConsumableIssuers',
+            self::class . '::getSelfConsumableIssuers() has been deprecated. Use getIdentityIssuers() instead.'
+        );
+        return $this->getIdentityIssuers();
+    }
+
+    /**
+     * @return array
+     * @throws \craft\errors\SiteNotFoundException
+     */
+    public function getIdentityIssuers(): array
+    {
+        if (empty($this->identityIssuers)) {
+            return [Craft::$app->getSites()->getCurrentSite()->getBaseUrl()];
         }
-        return (array)$this->selfConsumableIssuers;
+        return (array)$this->identityIssuers;
+    }
+
+
+    /**
+     * @param string|null $audience
+     * @return $this
+     *
+     * @deprecated
+     */
+    public function setSelfConsumableAudience(string $audience = null)
+    {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::setSelfConsumableAudience',
+            self::class . '::setSelfConsumableAudience() has been deprecated. Use setIdentityAudience() instead.'
+        );
+        return $this->setIdentityAudience($audience);
+    }
+
+    /**
+     * @param string|null $audience
+     * @return $this
+     */
+    public function setIdentityAudience(string $audience = null)
+    {
+        $this->identityAudience = $audience;
+        return $this;
+    }
+
+    /**
+     * @return string
+     * @throws \craft\errors\SiteNotFoundException
+     *
+     * @deprecated
+     */
+    public function getSelfConsumableAudience(): string
+    {
+        Craft::$app->getDeprecator()->log(
+            self::class . '::getSelfConsumableAudience',
+            self::class . '::getSelfConsumableAudience() has been deprecated. Use getIdentityAudience() instead.'
+        );
+        return $this->getIdentityAudience();
+    }
+
+    /**
+     * @return string
+     * @throws \craft\errors\SiteNotFoundException
+     */
+    public function getIdentityAudience(): string
+    {
+        if (null === $this->identityAudience) {
+            return Craft::$app->getSites()->getCurrentSite()->getBaseUrl();
+        }
+        return (string)$this->identityAudience;
     }
 
 
     /*******************************************
-     * SELF CONSUMABLE AUDIENCE
+     * ROUTE
      *******************************************/
 
     /**
-     * @param string|null $selfConsumableAudience
+     * @param $duration
      * @return $this
      */
-    public function setSelfConsumableAudience(string $selfConsumableAudience = null)
+    public function setRouteTokenDuration($duration)
     {
-        $this->selfConsumableAudience = $selfConsumableAudience;
+        $this->routeTokenDuration = $duration;
+        return $this;
+    }
+
+    /**
+     * @return int
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function getRouteTokenDuration(): int
+    {
+        if ($this->routeTokenDuration === null) {
+            $this->routeTokenDuration = Craft::$app->getConfig()->getGeneral()->userSessionDuration;
+        };
+
+        return ConfigHelper::durationInSeconds($this->routeTokenDuration);
+    }
+
+    /**
+     * @param string|null $audience
+     * @return $this
+     */
+    public function setRouteAudience(string $audience = null)
+    {
+        $this->routeAudience = $audience;
         return $this;
     }
 
@@ -218,14 +369,40 @@ class Settings extends Model
      * @return string
      * @throws \craft\errors\SiteNotFoundException
      */
-    public function getSelfConsumableAudience(): string
+    public function getRouteAudience(): string
     {
-        if (null === $this->selfConsumableAudience) {
-            return Craft::$app->getSites()->getCurrentSite()->baseUrl;
+        if (null === $this->routeAudience) {
+            return Craft::$app->getSites()->getCurrentSite()->getBaseUrl();
         }
-        return (string)$this->selfConsumableAudience;
+        return (string)$this->routeAudience;
     }
 
+    /**
+     * @param array|null $issuers
+     * @return $this
+     */
+    public function setRouteIssuers(array $issuers = [])
+    {
+        $this->routeIssuers = $issuers;
+        return $this;
+    }
+
+    /**
+     * @return array
+     * @throws \craft\errors\SiteNotFoundException
+     */
+    public function getRouteIssuers(): array
+    {
+        if (empty($this->routeIssuers)) {
+            return [Craft::$app->getSites()->getCurrentSite()->getBaseUrl()];
+        }
+        return (array)$this->routeIssuers;
+    }
+    
+
+    /*******************************************
+     * SELF CONSUMABLE AUDIENCE
+     *******************************************/
     /**
      * @param int $duration
      * @return $this
@@ -234,7 +411,7 @@ class Settings extends Model
      */
     public function setTokenExpiration(int $duration)
     {
-        $this->selfConsumableTokenDuration = $duration;
+        $this->identityTokenDuration = $duration;
         return $this;
     }
 
@@ -251,9 +428,12 @@ class Settings extends Model
             parent::attributes(),
             [
                 'key',
-                'selfConsumableTokenExpiration',
-                'selfConsumableAudience',
-                'selfConsumableIssuers',
+                'identityTokenExpiration',
+                'identityAudience',
+                'identityIssuers',
+                'routeTokenExpiration',
+                'routeAudience',
+                'routeIssuers',
                 'issuer'
             ]
         );
