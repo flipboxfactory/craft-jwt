@@ -1,6 +1,13 @@
 Changelog
 =========
 
+## 1.0.1 - 2019-10-15
+### Fixed
+- URL settings would throw an exception if Craft was not specifying a `baseUrl`.
+
+### Changed
+- Default identity token expiration duration is set to a default value if the Craft session duration is set to zero.
+
 ## 1.0.0 - 2019-09-30
 > {warning} The 'SelfConsumable' service class has been renamed to 'Identity'.  Please change any references in your Plugins, Module or TWIG - such as `craft.jwt.selfConsumable.*` to `craft.jwt.identity.*`
 

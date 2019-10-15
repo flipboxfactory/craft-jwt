@@ -10,6 +10,7 @@ namespace flipbox\craft\jwt\models;
 
 use Craft;
 use craft\helpers\ConfigHelper;
+use craft\helpers\UrlHelper;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Signer\Hmac\Sha384;
@@ -69,11 +70,18 @@ class Settings extends Model
     private $identityIssuers = [];
 
     /**
-     * The self consumable token duration.  Defaults to GeneralConfig::$userSessionDuration
+     * The identity token duration.  Defaults to GeneralConfig::$userSessionDuration
      *
      * @var int
      */
     private $identityTokenDuration;
+
+    /**
+     * The default identity token duration.  Used if a session duration is set to anything less than 0.
+     *
+     * @var int
+     */
+    public $defaultTokenDuration = 60 * 60 * 24;
 
 
     /**
@@ -135,7 +143,7 @@ class Settings extends Model
     public function getIssuer(): string
     {
         if (null === $this->issuer) {
-            return Craft::$app->getSites()->getCurrentSite()->getBaseUrl();
+            return $this->getDefaultUrl();
         }
         return (string)$this->issuer;
     }
@@ -218,6 +226,10 @@ class Settings extends Model
             $this->identityTokenDuration = Craft::$app->getConfig()->getGeneral()->userSessionDuration;
         };
 
+        if ($this->identityTokenDuration <= 0) {
+            $this->identityTokenDuration = $this->defaultTokenDuration;
+        }
+
         return ConfigHelper::durationInSeconds($this->identityTokenDuration);
     }
 
@@ -269,7 +281,7 @@ class Settings extends Model
     public function getIdentityIssuers(): array
     {
         if (empty($this->identityIssuers)) {
-            return [Craft::$app->getSites()->getCurrentSite()->getBaseUrl()];
+            return [$this->getDefaultUrl()];
         }
         return (array)$this->identityIssuers;
     }
@@ -322,7 +334,7 @@ class Settings extends Model
     public function getIdentityAudience(): string
     {
         if (null === $this->identityAudience) {
-            return Craft::$app->getSites()->getCurrentSite()->getBaseUrl();
+            return $this->getDefaultUrl();
         }
         return (string)$this->identityAudience;
     }
@@ -349,7 +361,7 @@ class Settings extends Model
     public function getRouteTokenDuration(): int
     {
         if ($this->routeTokenDuration === null) {
-            $this->routeTokenDuration = Craft::$app->getConfig()->getGeneral()->userSessionDuration;
+            $this->routeTokenDuration = $this->defaultTokenDuration;
         };
 
         return ConfigHelper::durationInSeconds($this->routeTokenDuration);
@@ -372,7 +384,7 @@ class Settings extends Model
     public function getRouteAudience(): string
     {
         if (null === $this->routeAudience) {
-            return Craft::$app->getSites()->getCurrentSite()->getBaseUrl();
+            return $this->getDefaultUrl();
         }
         return (string)$this->routeAudience;
     }
@@ -394,7 +406,7 @@ class Settings extends Model
     public function getRouteIssuers(): array
     {
         if (empty($this->routeIssuers)) {
-            return [Craft::$app->getSites()->getCurrentSite()->getBaseUrl()];
+            return [$this->getDefaultUrl()];
         }
         return (array)$this->routeIssuers;
     }
@@ -437,5 +449,14 @@ class Settings extends Model
                 'issuer'
             ]
         );
+    }
+
+    /**
+     * @return string
+     * @throws \craft\errors\SiteNotFoundException
+     */
+    private function getDefaultUrl(): string
+    {
+        return Craft::$app->getSites()->getCurrentSite()->getBaseUrl() ?? UrlHelper::baseRequestUrl();
     }
 }
