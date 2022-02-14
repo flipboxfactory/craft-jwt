@@ -28,6 +28,11 @@ class JwtHttpBearerAuth extends AuthMethod
     public $realm = 'api';
 
     /**
+     * @var string Authorization header, default 'Authorization'
+     */
+    public $header = 'Authorization';
+
+    /**
      * @var string Authorization header schema, default 'Bearer'
      */
     public $schema = 'Bearer';
@@ -45,9 +50,16 @@ class JwtHttpBearerAuth extends AuthMethod
      */
     public function authenticate($user, $request, $response)
     {
-        $authHeader = $request->getHeaders()->get('Authorization');
-        if ($authHeader === null || preg_match('/^' . $this->schema . '\s+(.*?)$/', $authHeader, $matches) === false) {
+        if (null === ($authHeader = $request->getHeaders()->get($this->header))) {
             return null;
+        }
+
+        if (null !== $this->schema) {
+            if (preg_match('/^' . $this->schema . '\s+(.*?)$/', $authHeader, $matches) === false) {
+                return null;
+            }
+        } else {
+            $matches = [$authHeader, $authHeader];
         }
 
         // Header does not match schema
