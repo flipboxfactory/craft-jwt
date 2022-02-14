@@ -1,6 +1,11 @@
 Changelog
 =========
 
+## 1.1.0 - 2022-01-14
+### Added
+- JWT filter can accommodate various header patterns.
+
+
 ## 1.0.1 - 2019-10-15
 ### Fixed
 - URL settings would throw an exception if Craft was not specifying a `baseUrl`.

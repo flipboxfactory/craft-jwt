@@ -29,6 +29,7 @@ class JwtHttpBearerAuth extends AuthMethod
 
     /**
      * @var string Authorization header, default 'Authorization'
+     * @since 1.1.0
      */
     public $header = 'Authorization';
 
