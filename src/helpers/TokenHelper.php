@@ -9,9 +9,18 @@
 namespace flipbox\craft\jwt\helpers;
 
 use Craft;
-use craft\helpers\User;
+use craft\elements\User;
+use craft\errors\SiteNotFoundException;
 use flipbox\craft\jwt\Jwt;
+use Lcobucci\Clock\FrozenClock;
+use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Token;
+use Lcobucci\JWT\Validation\Constraint\IssuedBy;
+use Lcobucci\JWT\Validation\Constraint\PermittedFor;
+use Lcobucci\JWT\Validation\Constraint\SignedWith;
+use Lcobucci\JWT\Validation\Constraint\StrictValidAt;
+use Lcobucci\JWT\Validation\Validator;
 use yii\web\IdentityInterface;
 
 /**
@@ -41,24 +50,15 @@ class TokenHelper
     const CLAIM_IDENTITY = 'jti';
 
     /**
-     * @param $token
-     * @param bool $validate
+     * @param string $token
      * @return Token|null
-     * @throws \craft\errors\SiteNotFoundException
      */
-    public static function parse(string $token, bool $validate = true)
+    public static function parse(string $token)
     {
         try {
-            $token = Jwt::getInstance()->getParser()->parse((string)$token);
-        } catch (\RuntimeException $e) {
+            $token = Jwt::getInstance()->getParser()->parse($token);
+        } catch (\RuntimeException|\InvalidArgumentException $e) {
             Jwt::warning("Invalid JWT provided: " . $e->getMessage());
-            return null;
-        } catch (\InvalidArgumentException $e) {
-            Jwt::warning("Invalid JWT provided: " . $e->getMessage());
-            return null;
-        }
-
-        if ($validate && !Jwt::getInstance()->validateToken($token)) {
             return null;
         }
 
@@ -66,18 +66,42 @@ class TokenHelper
     }
 
     /**
-     * @param IdentityInterface $identity
-     * @return string
+     * @param IdentityInterface|null $identity
+     * @return Key
      */
-    public static function getSignatureKey(IdentityInterface $identity = null)
+    public static function getSignatureKey(IdentityInterface|null $identity = null): Key
     {
         $result = Jwt::getInstance()->getSettings()->getKey();
 
         if ($identity === null) {
-            return $result;
+            return InMemory::plainText($result);
         }
 
-        return $result . '.' . ($identity instanceof User ? $identity->uid : $identity->getId());
+        return InMemory::plainText(
+            $result . '.' . ($identity instanceof User ? $identity->uid : $identity->getId())
+        );
+    }
+
+    /**
+     * @param Token $token
+     * @param Validator|null $validator
+     * @return bool
+     */
+    public static function verifyTokenDates(Token $token, Validator $validator = null): bool
+    {
+        $validator = $validator ?: new Validator();
+
+        if (false === $validator->validate(
+                $token, new StrictValidAt(
+                    new FrozenClock(new \DateTimeImmutable())
+                )
+            )
+        ) {
+            Jwt::error("Unable to verify token dates");
+
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -86,7 +110,7 @@ class TokenHelper
      */
     public static function verifyTokenCsrfClaim(Token $token): bool
     {
-        $csrf = $token->getClaim(self::CLAIM_CSRF);
+        $csrf = $token->claims()->get(self::CLAIM_CSRF);
         if (false === Craft::$app->getRequest()->validateCsrfToken($csrf)) {
             Jwt::error(sprintf(
                 "Unable to verify CSRF Token: %s",
@@ -100,16 +124,23 @@ class TokenHelper
 
     /**
      * @param Token $token
-     * @param IdentityInterface $identity
+     * @param IdentityInterface|null $identity
+     * @param Validator|null $validator
      * @return bool
      */
-    public static function verifyTokenSignature(Token $token, IdentityInterface $identity = null): bool
+    public static function verifyTokenSignature(Token $token, IdentityInterface|null $identity = null, Validator $validator = null): bool
     {
+        $validator = $validator ?: new Validator();
+
         try {
-            if (false === $token->verify(
-                Jwt::getInstance()->getSettings()->resolveSigner($token->getHeader('alg')),
-                TokenHelper::getSignatureKey($identity)
-            )) {
+            if (false === $validator->validate(
+                    $token,
+                    new SignedWith(
+                        Jwt::getInstance()->getSettings()->resolveSigner($token->headers()->get('alg')),
+                        TokenHelper::getSignatureKey($identity)
+                    )
+                )
+            ) {
                 Jwt::error("Unable to verify token signature");
                 return false;
             }
@@ -125,16 +156,24 @@ class TokenHelper
 
     /**
      * @param Token $token
+     * @param Validator|null $validator
      * @return bool
-     * @throws \craft\errors\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
-    public static function verifyAudience(Token $token): bool
+    public static function verifyAudience(Token $token, Validator $validator = null): bool
     {
-        $audience = $token->getClaim(TokenHelper::CLAIM_AUDIENCE);
-        if (false === ($audience === Craft::$app->getSites()->getCurrentSite()->getBaseUrl())) {
+        $validator = $validator ?: new Validator();
+
+        if (false === $validator->validate(
+                $token,
+                new PermittedFor(
+                    Craft::$app->getSites()->getCurrentSite()->getBaseUrl()
+                )
+            )
+        ) {
             Jwt::error(sprintf(
                 "Unable to verify audience: %s",
-                $audience
+                $token->claims()->get(TokenHelper::CLAIM_AUDIENCE)
             ));
 
             return false;
@@ -147,19 +186,23 @@ class TokenHelper
      *
      * @param Token $token
      * @param array $issuers
+     * @param Validator|null $validator
      * @return bool
-     * @throws \craft\errors\SiteNotFoundException
      */
-    public static function verifyIssuer(Token $token, array $issuers): bool
+    public static function verifyIssuer(Token $token, array $issuers, Validator $validator = null): bool
     {
-        $issuer = $token->getClaim(TokenHelper::CLAIM_ISSUER);
-        if (false === in_array(
-            $issuer,
-            $issuers
-        )) {
+        $validator = $validator ?: new Validator();
+
+        if (false === $validator->validate(
+                $token,
+                new IssuedBy(
+                    ...$issuers
+                )
+            )
+        ) {
             Jwt::error(sprintf(
                 "Unable to verify issuer: %s",
-                $issuer
+                $token->claims()->get(TokenHelper::CLAIM_ISSUER)
             ));
 
             return false;

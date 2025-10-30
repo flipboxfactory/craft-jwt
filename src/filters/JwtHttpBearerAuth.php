@@ -25,23 +25,23 @@ class JwtHttpBearerAuth extends AuthMethod
      * of protection in the manner described in HTTP/1.1 [RFC2617].  The "realm"
      * attribute MUST NOT appear more than once.
      */
-    public $realm = 'api';
+    public string $realm = 'api';
 
     /**
      * @var string Authorization header, default 'Authorization'
      * @since 1.1.0
      */
-    public $header = 'Authorization';
+    public string $header = 'Authorization';
 
     /**
-     * @var string Authorization header schema, default 'Bearer'
+     * @var string|null Authorization header schema, default 'Bearer'
      */
-    public $schema = 'Bearer';
+    public string|null $schema = 'Bearer';
 
     /**
      * @var bool Perform a full login operation, default `false`
      */
-    public $login = false;
+    public bool $login = false;
 
     /**
      * @inheritdoc
@@ -90,27 +90,16 @@ class JwtHttpBearerAuth extends AuthMethod
     }
 
     /**
-     * @param IdentityInterface $identity
-     * @return bool
-     *
-     * @deprecated
-     */
-    protected function canLogin(IdentityInterface $identity = null): bool
-    {
-        return $this->validIdentity($identity);
-    }
-
-    /**
-     * @param IdentityInterface $identity
+     * @param IdentityInterface|null $identity
      * @return bool
      */
-    protected function validIdentity(IdentityInterface $identity = null): bool
+    protected function validIdentity(IdentityInterface|null $identity = null): bool
     {
         if ($identity === null || empty($identity->getId())) {
             return false;
         }
 
-        return $identity instanceof User && $identity->getStatus() === User::STATUS_ACTIVE;
+        return $identity->getStatus() === User::STATUS_ACTIVE;
     }
 
     /**

@@ -9,12 +9,14 @@
 namespace flipbox\craft\jwt\services;
 
 use Craft;
-use craft\elements\User;
-use flipbox\craft\jwt\Jwt;
+use craft\errors\SiteNotFoundException;
 use flipbox\craft\jwt\helpers\TokenHelper;
 use flipbox\craft\jwt\helpers\UserHelper;
+use flipbox\craft\jwt\Jwt;
 use Lcobucci\JWT\Token;
+use Lcobucci\JWT\Validation\Validator;
 use yii\base\Component;
+use yii\base\InvalidConfigException;
 use yii\web\IdentityInterface;
 
 /**
@@ -44,37 +46,40 @@ class Route extends Component
      *     'foo' => 'bar'
      * ]]
      *
-     * @param string|array $action
-     * @param string|int|IdentityInterface $user
+     * @param array|string $action
+     * @param int|string|IdentityInterface|null $user
      * @param string|null $audience
      * @param int|null $expiration
      * @return Token|null
      * @throws \craft\errors\SiteNotFoundException
      * @throws \yii\base\InvalidConfigException
+     * @throws \Throwable
      */
     public function issue(
-        $action,
-        $user = null,
-        int $expiration = null,
-        string $audience = null
-    ) {
+        array|string                 $action,
+        int|string|IdentityInterface $user = null,
+        int                          $expiration = null,
+        string                       $audience = null
+    )
+    {
         $identity = UserHelper::resolveUser($user);
 
+        $now = new \DateTimeImmutable();
+
         $builder = Jwt::getInstance()->getBuilder()
-            ->setIssuer(Jwt::getInstance()->getSettings()->getIssuer())
-            ->setAudience($this->resolveAudience($audience))
-            ->setIssuedAt(time())
-            ->setNotBefore(time())
-            ->setExpiration($this->resolveTokenExpiration($expiration))
-            ->set(TokenHelper::CLAIM_CSRF, Craft::$app->getRequest()->getCsrfToken())
-            ->set(self::CLAIM_ROUTE, serialize($action))
-            ->sign(Jwt::getInstance()->getSettings()->getSigner(), TokenHelper::getSignatureKey($identity));
+            ->issuedBy(Jwt::getInstance()->getSettings()->getIssuer())
+            ->permittedFor($this->resolveAudience($audience))
+            ->issuedAt($now)
+            ->canOnlyBeUsedAfter($now)
+            ->expiresAt($this->resolveTokenExpiration($now, $expiration))
+            ->withClaim(TokenHelper::CLAIM_CSRF, Craft::$app->getRequest()->getCsrfToken())
+            ->withClaim(self::CLAIM_ROUTE, serialize($action));
 
         if ($identity) {
-            $builder->setId($identity->getId(), true);
+            $builder->relatedTo($identity->getId());
         }
 
-        return $builder->getToken();
+        return $builder->getToken(Jwt::getInstance()->getSettings()->getSigner(), TokenHelper::getSignatureKey($identity));
     }
 
     /**
@@ -82,8 +87,9 @@ class Route extends Component
      * @param bool $assumeIdentity
      * @return string|array
      * @throws \craft\errors\SiteNotFoundException
+     * @throws \Throwable
      */
-    public function claim(string $token, bool $assumeIdentity = true)
+    public function claim(string $token, bool $assumeIdentity = true): false|array|string
     {
         if (null === ($token = $this->parse($token))) {
             return false;
@@ -94,36 +100,37 @@ class Route extends Component
             Craft::$app->getUser()->setIdentity($identity);
         }
 
-        return unserialize($token->getClaim(static::CLAIM_ROUTE));
+        return unserialize($token->claims()->get(static::CLAIM_ROUTE));
     }
 
     /**
      * @param Token $token
      * @return null|IdentityInterface
+     * @throws \Throwable
      */
     private function tokenIdentity(Token $token)
     {
-        if (!$token->hasClaim(TokenHelper::CLAIM_IDENTITY)) {
+        if (!$token->claims()->has(TokenHelper::CLAIM_IDENTITY)) {
             return null;
         }
 
-        return UserHelper::resolveUser($token->getClaim(TokenHelper::CLAIM_IDENTITY));
+        return UserHelper::resolveUser($token->claims()->get(TokenHelper::CLAIM_IDENTITY));
     }
 
     /**
-     * @param $token
+     * @param string $token
      * @param bool $validate
-     * @param bool $verify
      * @return Token|null
-     * @throws \craft\errors\SiteNotFoundException
+     * @throws SiteNotFoundException
+     * @throws \Throwable
      */
-    public function parse(string $token, bool $validate = true, bool $verify = true)
+    public function parse(string $token, bool $validate = true): ?Token
     {
-        if (null === ($token = TokenHelper::parse($token, $validate))) {
+        if (null === ($token = TokenHelper::parse($token))) {
             return null;
         }
 
-        if ($verify && !$this->verifyToken($token)) {
+        if ($validate && !$this->validateToken($token)) {
             return null;
         }
 
@@ -134,18 +141,22 @@ class Route extends Component
      * @param Token $token
      * @return bool
      * @throws \craft\errors\SiteNotFoundException
+     * @throws \Throwable
      */
-    public function verifyToken(Token $token): bool
+    public function validateToken(Token $token): bool
     {
         $identity = null;
-        if ($token->hasClaim(TokenHelper::CLAIM_IDENTITY)) {
-            $identity = UserHelper::resolveUser($token->getClaim(TokenHelper::CLAIM_IDENTITY));
+        if ($token->claims()->has(TokenHelper::CLAIM_IDENTITY)) {
+            $identity = UserHelper::resolveUser($token->claims()->get(TokenHelper::CLAIM_IDENTITY));
         }
 
-        return TokenHelper::verifyTokenCsrfClaim($token) &&
-            TokenHelper::verifyIssuer($token, Jwt::getInstance()->getSettings()->getRouteIssuers()) &&
-            TokenHelper::verifyAudience($token) &&
-            TokenHelper::verifyTokenSignature($token, $identity);
+        $validator = new Validator();
+
+        return TokenHelper::verifyTokenDates($token, $validator) &&
+            TokenHelper::verifyTokenCsrfClaim($token) &&
+            TokenHelper::verifyIssuer($token, Jwt::getInstance()->getSettings()->getRouteIssuers(), $validator) &&
+            TokenHelper::verifyAudience($token, $validator) &&
+            TokenHelper::verifyTokenSignature($token, $identity, $validator);
     }
 
     /**
@@ -163,16 +174,17 @@ class Route extends Component
     }
 
     /**
+     * @param \DateTimeImmutable $now
      * @param int|null $expiration
-     * @return int
-     * @throws \yii\base\InvalidConfigException
+     * @return \DateTimeImmutable
+     * @throws InvalidConfigException
      */
-    private function resolveTokenExpiration(int $expiration = null): int
+    private function resolveTokenExpiration(\DateTimeImmutable $now, int $expiration = null): \DateTimeImmutable
     {
         if ($expiration === null) {
             $expiration = Jwt::getInstance()->getSettings()->getRouteTokenDuration();
         }
 
-        return time() + (int)$expiration;
+        return $now->modify((int)$expiration . ' seconds');
     }
 }

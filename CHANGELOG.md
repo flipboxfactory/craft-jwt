@@ -1,10 +1,22 @@
 Changelog
 =========
 
+## 5.0.0 - 2025-10-30
+### Added
+- Support for Craft v5
+
+### Changed
+- Updated underlying JWT package
+- Removed `JWT::getValidationData` as the underlying package no longer supports it
+- Removed `JWT::validateToken` as the underlying validation has changed
+- Getting a token via twig now requires `toString()` Ex: `{{ craft.jwt.identity.issue.toString() }}`
+
+### Removed
+- Deprecated `SelfConsumable` service
+
 ## 1.1.0 - 2022-01-14
 ### Added
 - JWT filter can accommodate various header patterns.
-
 
 ## 1.0.1 - 2019-10-15
 ### Fixed

@@ -8,9 +8,9 @@
 
 namespace flipbox\craft\jwt\actions;
 
+use Craft;
 use flipbox\craft\jwt\Jwt;
 use yii\base\Action;
-use Craft;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 

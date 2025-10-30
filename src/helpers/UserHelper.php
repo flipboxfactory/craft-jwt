@@ -21,8 +21,9 @@ class UserHelper extends User
     /**
      * @param $user
      * @return IdentityInterface|null
+     * @throws \Throwable
      */
-    public static function resolveUser($user)
+    public static function resolveUser($user): IdentityInterface|null
     {
         if ($user instanceof IdentityInterface) {
             return $user;

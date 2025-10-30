@@ -12,13 +12,13 @@ use Craft;
 use craft\base\Plugin;
 use craft\web\twig\variables\CraftVariable;
 use flipbox\craft\jwt\models\Settings as SettingsModel;
-use Lcobucci\JWT\Builder;
-use Lcobucci\JWT\Claim\Factory as ClaimFactory;
-use Lcobucci\JWT\Parser;
-use Lcobucci\JWT\Parsing\Decoder;
-use Lcobucci\JWT\Parsing\Encoder;
-use Lcobucci\JWT\Token;
-use Lcobucci\JWT\ValidationData;
+use Lcobucci\JWT\ClaimsFormatter;
+use Lcobucci\JWT\Decoder;
+use Lcobucci\JWT\Encoder;
+use Lcobucci\JWT\Encoding\ChainedFormatter;
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Token\Builder;
+use Lcobucci\JWT\Token\Parser;
 use yii\base\Event;
 use yii\log\Logger;
 
@@ -38,7 +38,7 @@ class Jwt extends Plugin
      *
      * @var string
      */
-    public static $category = 'jwt';
+    public static string $category = 'jwt';
 
     /**
      * @inheritdoc
@@ -67,8 +67,10 @@ class Jwt extends Plugin
 
     /**
      * @inheritdoc
+     *
+     * @return SettingsModel
      */
-    public function createSettingsModel(): SettingsModel
+    public function createSettingsModel(): ?craft\base\Model
     {
         return new SettingsModel();
     }
@@ -84,7 +86,6 @@ class Jwt extends Plugin
     public function getIdentity(): services\Identity
     {
         /** @noinspection PhpUnhandledExceptionInspection */
-        /** @noinspection PhpIncompatibleReturnTypeInspection */
         return $this->get('identity');
     }
 
@@ -95,20 +96,7 @@ class Jwt extends Plugin
     public function getRoute(): services\Route
     {
         /** @noinspection PhpUnhandledExceptionInspection */
-        /** @noinspection PhpIncompatibleReturnTypeInspection */
         return $this->get('route');
-    }
-
-    /**
-     * @deprecated
-     */
-    public function getSelfConsumable(): services\Identity
-    {
-        Craft::$app->getDeprecator()->log(
-            self::class . '::getSelfConsumable',
-            self::class . '::getSelfConsumable() has been deprecated. Use getIdentity() instead.'
-        );
-        return $this->getIdentity();
     }
 
     /*******************************************
@@ -117,51 +105,26 @@ class Jwt extends Plugin
 
     /**
      * @param Encoder|null $encoder
-     * @param ClaimFactory|null $claimFactory
+     * @param ClaimsFormatter|null $claimFormatter
      *
-     * @see [[Lcobucci\JWT\Builder::__construct()]]
      * @return Builder
+     * @see [[Lcobucci\JWT\Builder::__construct()]]
      */
-    public function getBuilder(Encoder $encoder = null, ClaimFactory $claimFactory = null): Builder
+    public function getBuilder(Encoder|null $encoder = null, ClaimsFormatter|null $claimFormatter = null): Builder
     {
-        return new Builder($encoder, $claimFactory);
+        return new Builder($encoder ?: new JoseEncoder(), $claimFormatter ?: ChainedFormatter::default());
     }
 
     /**
      * @param Decoder|null $decoder
-     * @param ClaimFactory|null $claimFactory
      *
-     * @see [[Lcobucci\JWT\Parser::__construct()]]
      * @return Parser
+     * @see [[Lcobucci\JWT\Parser::__construct()]]
      */
-    public function getParser(Decoder $decoder = null, ClaimFactory $claimFactory = null): Parser
+    public function getParser(Decoder|null $decoder = null): Parser
     {
-        return new Parser($decoder, $claimFactory);
+        return new Parser($decoder ?: new JoseEncoder());
     }
-
-    /**
-     * @param int|null $currentTime
-     *
-     * @see [[Lcobucci\JWT\ValidationData::__construct()]]
-     * @return ValidationData
-     */
-    public function getValidationData(int $currentTime = null): ValidationData
-    {
-        return new ValidationData($currentTime);
-    }
-
-    /**
-     * @param Token $token
-     * @param int|null $currentTime
-     * @return bool
-     */
-    public function validateToken(Token $token, int $currentTime = null): bool
-    {
-        return $token->validate(
-            $this->getValidationData($currentTime)
-        );
-    }
-
 
     /*******************************************
      * LOGGING
@@ -174,9 +137,8 @@ class Jwt extends Plugin
      * @param bool $audit flag as an audit message.
      * @return string
      */
-    protected static function loggerCategory(string $category = null, bool $audit = false): string
+    protected static function loggerCategory(string|null $category = null, bool $audit = false): string
     {
-        /** @noinspection PhpUndefinedFieldInspection */
         $prefix = static::$category ? (static::$category . ($audit ? ':audit' : '')) : '';
 
         if (empty($category)) {

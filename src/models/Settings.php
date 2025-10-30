@@ -9,6 +9,7 @@
 namespace flipbox\craft\jwt\models;
 
 use Craft;
+use craft\base\Model;
 use craft\helpers\ConfigHelper;
 use craft\helpers\UrlHelper;
 use Lcobucci\JWT\Signer;
@@ -16,7 +17,6 @@ use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Signer\Hmac\Sha384;
 use Lcobucci\JWT\Signer\Hmac\Sha512;
 use yii\base\InvalidArgumentException;
-use yii\base\Model;
 
 /**
  * @author Flipbox Factory <hello@flipboxfactory.com>
@@ -45,70 +45,80 @@ class Settings extends Model
     /**
      * The key used for token signature
      *
-     * @var string
+     * @var string|null
      */
-    private $key;
+    private ?string $key = null;
 
     /** The entity issuing the token
      *
-     * @var string
+     * @var string|null
      */
-    private $issuer = null;
+    private ?string $issuer = null;
 
     /**
      * The default audience
      *
-     * @var string
+     * @var string|null
      */
-    private $identityAudience = null;
+    private ?string $identityAudience = null;
 
     /**
      * The available audiences
      *
      * @var array
      */
-    private $identityIssuers = [];
+    private array $identityIssuers = [];
 
     /**
      * The identity token duration.  Defaults to GeneralConfig::$userSessionDuration
      *
-     * @var int
+     * @var int|null
      */
-    private $identityTokenDuration;
+    private ?int $identityTokenDuration;
 
     /**
      * The default identity token duration.  Used if a session duration is set to anything less than 0.
      *
-     * @var int
+     * @var int|float
      */
-    public $defaultTokenDuration = 60 * 60 * 24;
+    public int|float $defaultTokenDuration = 60 * 60 * 24;
 
 
     /**
      * The default audience
      *
-     * @var string
+     * @var string|null
      */
-    private $routeAudience = null;
+    private ?string $routeAudience = null;
 
     /**
      * The available audiences
      *
      * @var array
      */
-    private $routeIssuers = [];
+    private array $routeIssuers = [];
 
     /**
      * The self consumable token duration.  Defaults to GeneralConfig::$userSessionDuration
      *
-     * @var int
+     * @var int|null
      */
-    private $routeTokenDuration;
+    private ?int $routeTokenDuration;
 
 
     /*******************************************
      * KEY
      *******************************************/
+
+    /**
+     * @param string|null $key
+     * @return $this
+     */
+    public function setKey(string $key = null): static
+    {
+        $this->key = $key;
+        return $this;
+    }
 
     /**
      * @return string
@@ -130,7 +140,7 @@ class Settings extends Model
      * @param string|null $issuer
      * @return $this
      */
-    public function setIssuer(string $issuer = null)
+    public function setIssuer(string $issuer = null): static
     {
         $this->issuer = $issuer;
         return $this;
@@ -194,26 +204,10 @@ class Settings extends Model
      * @param $duration
      * @return $this
      */
-    public function setIdentityTokenDuration($duration)
+    public function setIdentityTokenDuration($duration): static
     {
         $this->identityTokenDuration = $duration;
         return $this;
-    }
-
-    /**
-     * @return int
-     * @throws \yii\base\InvalidConfigException
-     *
-     * @deprecated
-     */
-    public function getSelfConsumableTokenDuration(): int
-    {
-        Craft::$app->getDeprecator()->log(
-            self::class . '::getSelfConsumableTokenDuration',
-            self::class . '::getSelfConsumableTokenDuration() has been deprecated. ' .
-            'Use getIdentityTokenDuration() instead.'
-        );
-        return $this->getIdentityTokenDuration();
     }
 
     /**
@@ -224,7 +218,7 @@ class Settings extends Model
     {
         if ($this->identityTokenDuration === null) {
             $this->identityTokenDuration = Craft::$app->getConfig()->getGeneral()->userSessionDuration;
-        };
+        }
 
         if ($this->identityTokenDuration <= 0) {
             $this->identityTokenDuration = $this->defaultTokenDuration;
@@ -233,45 +227,14 @@ class Settings extends Model
         return ConfigHelper::durationInSeconds($this->identityTokenDuration);
     }
 
-
     /**
-     * @param array|null $issuers
-     * @return $this
-     *
-     * @deprecated
-     */
-    public function setSelfConsumableIssuers(array $issuers = [])
-    {
-        Craft::$app->getDeprecator()->log(
-            self::class . '::setSelfConsumableIssuers',
-            self::class . '::setSelfConsumableIssuers() has been deprecated. Use setIdentityIssuers() instead.'
-        );
-        return $this->setIdentityIssuers($issuers);
-    }
-
-    /**
-     * @param array|null $issuers
+     * @param array $issuers
      * @return $this
      */
-    public function setIdentityIssuers(array $issuers = [])
+    public function setIdentityIssuers(array $issuers = []): static
     {
         $this->identityIssuers = $issuers;
         return $this;
-    }
-
-    /**
-     * @return array
-     * @throws \craft\errors\SiteNotFoundException
-     *
-     * @deprecated
-     */
-    public function getSelfConsumableIssuers(): array
-    {
-        Craft::$app->getDeprecator()->log(
-            self::class . '::getSelfConsumableIssuers',
-            self::class . '::getSelfConsumableIssuers() has been deprecated. Use getIdentityIssuers() instead.'
-        );
-        return $this->getIdentityIssuers();
     }
 
     /**
@@ -286,45 +249,14 @@ class Settings extends Model
         return (array)$this->identityIssuers;
     }
 
-
-    /**
-     * @param string|null $audience
-     * @return $this
-     *
-     * @deprecated
-     */
-    public function setSelfConsumableAudience(string $audience = null)
-    {
-        Craft::$app->getDeprecator()->log(
-            self::class . '::setSelfConsumableAudience',
-            self::class . '::setSelfConsumableAudience() has been deprecated. Use setIdentityAudience() instead.'
-        );
-        return $this->setIdentityAudience($audience);
-    }
-
     /**
      * @param string|null $audience
      * @return $this
      */
-    public function setIdentityAudience(string $audience = null)
+    public function setIdentityAudience(string $audience = null): static
     {
         $this->identityAudience = $audience;
         return $this;
-    }
-
-    /**
-     * @return string
-     * @throws \craft\errors\SiteNotFoundException
-     *
-     * @deprecated
-     */
-    public function getSelfConsumableAudience(): string
-    {
-        Craft::$app->getDeprecator()->log(
-            self::class . '::getSelfConsumableAudience',
-            self::class . '::getSelfConsumableAudience() has been deprecated. Use getIdentityAudience() instead.'
-        );
-        return $this->getIdentityAudience();
     }
 
     /**
@@ -348,7 +280,7 @@ class Settings extends Model
      * @param $duration
      * @return $this
      */
-    public function setRouteTokenDuration($duration)
+    public function setRouteTokenDuration($duration): static
     {
         $this->routeTokenDuration = $duration;
         return $this;
@@ -362,7 +294,7 @@ class Settings extends Model
     {
         if ($this->routeTokenDuration === null) {
             $this->routeTokenDuration = $this->defaultTokenDuration;
-        };
+        }
 
         return ConfigHelper::durationInSeconds($this->routeTokenDuration);
     }
@@ -371,7 +303,7 @@ class Settings extends Model
      * @param string|null $audience
      * @return $this
      */
-    public function setRouteAudience(string $audience = null)
+    public function setRouteAudience(string $audience = null): static
     {
         $this->routeAudience = $audience;
         return $this;
@@ -390,10 +322,10 @@ class Settings extends Model
     }
 
     /**
-     * @param array|null $issuers
+     * @param array $issuers
      * @return $this
      */
-    public function setRouteIssuers(array $issuers = [])
+    public function setRouteIssuers(array $issuers = []): static
     {
         $this->routeIssuers = $issuers;
         return $this;
@@ -409,22 +341,6 @@ class Settings extends Model
             return [$this->getDefaultUrl()];
         }
         return (array)$this->routeIssuers;
-    }
-    
-
-    /*******************************************
-     * SELF CONSUMABLE AUDIENCE
-     *******************************************/
-    /**
-     * @param int $duration
-     * @return $this
-     *
-     * @deprecated
-     */
-    public function setTokenExpiration(int $duration)
-    {
-        $this->identityTokenDuration = $duration;
-        return $this;
     }
 
     /*******************************************

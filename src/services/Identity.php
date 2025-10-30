@@ -10,11 +10,14 @@ namespace flipbox\craft\jwt\services;
 
 use Craft;
 use craft\elements\User;
-use flipbox\craft\jwt\Jwt;
+use craft\errors\SiteNotFoundException;
 use flipbox\craft\jwt\helpers\TokenHelper;
 use flipbox\craft\jwt\helpers\UserHelper;
+use flipbox\craft\jwt\Jwt;
 use Lcobucci\JWT\Token;
+use Lcobucci\JWT\Validation\Validator;
 use yii\base\Component;
+use yii\base\InvalidConfigException;
 use yii\web\IdentityInterface;
 
 /**
@@ -32,35 +35,40 @@ class Identity extends Component
      * @return Token|null
      * @throws \craft\errors\SiteNotFoundException
      * @throws \yii\base\InvalidConfigException
+     * @throws \Throwable
      */
     public function issue(
-        $user = 'CURRENT_USER',
+        string $user = 'CURRENT_USER',
         string $audience = null,
-        int $expiration = null
-    ) {
+        int    $expiration = null
+    ): ?Token
+    {
         if (null === ($identity = UserHelper::resolveUser($user))) {
             $identity = new User();
         }
 
+        $now = new \DateTimeImmutable();
+
         return Jwt::getInstance()->getBuilder()
-            ->setIssuer(Jwt::getInstance()->getSettings()->getIssuer())
-            ->setAudience($this->resolveAudience($audience))
-            ->setId($identity->getId(), true)
-            ->setIssuedAt(time())
-            ->setNotBefore(time())
-            ->setExpiration($this->resolveTokenExpiration($expiration))
-            ->set(TokenHelper::CLAIM_CSRF, Craft::$app->getRequest()->getCsrfToken())
-            ->sign(Jwt::getInstance()->getSettings()->getSigner(), TokenHelper::getSignatureKey($identity))
-            ->getToken();
+            ->issuedBy(Jwt::getInstance()->getSettings()->getIssuer())
+            ->permittedFor($this->resolveAudience($audience))
+            ->relatedTo($identity->getId())
+            ->issuedAt($now)
+            ->canOnlyBeUsedAfter($now)
+            ->expiresAt($this->resolveTokenExpiration($now, $expiration))
+            ->withClaim(TokenHelper::CLAIM_CSRF, Craft::$app->getRequest()->getCsrfToken())
+            ->getToken(Jwt::getInstance()->getSettings()->getSigner(), TokenHelper::getSignatureKey($identity));
     }
 
     /**
      * This
+     *
      * @param string $token
      * @return bool|null|IdentityInterface
      * @throws \craft\errors\SiteNotFoundException
+     * @throws \Throwable
      */
-    public function claim(string $token)
+    public function claim(string $token): bool|IdentityInterface|null
     {
         if (null === ($token = $this->parse($token))) {
             return false;
@@ -70,19 +78,19 @@ class Identity extends Component
     }
 
     /**
-     * @param $token
+     * @param string $token
      * @param bool $validate
-     * @param bool $verify
      * @return Token|null
-     * @throws \craft\errors\SiteNotFoundException
+     * @throws SiteNotFoundException
+     * @throws \Throwable
      */
-    public function parse(string $token, bool $validate = true, bool $verify = true)
+    public function parse(string $token, bool $validate = true): ?Token
     {
-        if (null === ($token = TokenHelper::parse($token, $validate))) {
+        if (null === ($token = TokenHelper::parse($token))) {
             return null;
         }
 
-        if ($verify && !$this->verifyToken($token)) {
+        if ($validate && !$this->validateToken($token)) {
             return null;
         }
 
@@ -93,26 +101,33 @@ class Identity extends Component
      * @param Token $token
      * @return bool
      * @throws \craft\errors\SiteNotFoundException
+     * @throws \Throwable
      */
-    public function verifyToken(Token $token): bool
+    public function validateToken(Token $token): bool
     {
-        if (null === ($identity = UserHelper::resolveUser($token->getClaim(TokenHelper::CLAIM_IDENTITY)))) {
+        if (null === ($identity = UserHelper::resolveUser($token->claims()->get(TokenHelper::CLAIM_IDENTITY)))) {
             $identity = new User();
         }
 
-        return TokenHelper::verifyTokenCsrfClaim($token) &&
-            TokenHelper::verifyIssuer($token, Jwt::getInstance()->getSettings()->getIdentityIssuers()) &&
-            TokenHelper::verifyAudience($token) &&
-            TokenHelper::verifyTokenSignature($token, $identity);
+        $validator = new Validator();
+
+        return TokenHelper::verifyTokenDates($token, $validator) &&
+            TokenHelper::verifyTokenCsrfClaim($token) &&
+            TokenHelper::verifyIssuer($token, Jwt::getInstance()->getSettings()->getIdentityIssuers(), $validator) &&
+            TokenHelper::verifyAudience($token, $validator) &&
+            TokenHelper::verifyTokenSignature($token, $identity, $validator);
     }
 
     /**
      * @param Token $token
      * @return null|IdentityInterface
+     * @throws \Throwable
      */
-    private function tokenIdentity(Token $token)
+    private function tokenIdentity(Token $token): ?IdentityInterface
     {
-        return UserHelper::resolveUser($token->getClaim(TokenHelper::CLAIM_IDENTITY));
+        return UserHelper::resolveUser(
+            $token->claims()->get(TokenHelper::CLAIM_IDENTITY)
+        );
     }
 
     /**
@@ -130,16 +145,17 @@ class Identity extends Component
     }
 
     /**
+     * @param \DateTimeImmutable $now
      * @param int|null $expiration
-     * @return int
-     * @throws \yii\base\InvalidConfigException
+     * @return \DateTimeImmutable
+     * @throws InvalidConfigException
      */
-    private function resolveTokenExpiration(int $expiration = null): int
+    private function resolveTokenExpiration(\DateTimeImmutable $now, int $expiration = null): \DateTimeImmutable
     {
         if ($expiration === null) {
             $expiration = Jwt::getInstance()->getSettings()->getIdentityTokenDuration();
         }
 
-        return time() + (int)$expiration;
+        return $now->modify((int)$expiration . ' seconds');
     }
 }

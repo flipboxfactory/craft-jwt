@@ -9,8 +9,8 @@
 namespace flipbox\craft\jwt\controllers;
 
 use Craft;
-use flipbox\craft\jwt\actions\RouteAction;
 use craft\web\Controller;
+use flipbox\craft\jwt\actions\RouteAction;
 
 /**
  * @author Flipbox Factory <hello@flipboxfactory.com>
@@ -21,7 +21,7 @@ class RouteController extends Controller
     /**
      * @inheritdoc
      */
-    protected $allowAnonymous = ['index'];
+    protected int|bool|array $allowAnonymous = ['index'];
 
     /**
      * @param string|null $jwt
@@ -29,7 +29,7 @@ class RouteController extends Controller
      * @throws \yii\base\InvalidConfigException
      * @throws \yii\web\BadRequestHttpException
      */
-    public function actionIndex(string $jwt = null)
+    public function actionIndex(string|null $jwt = null): mixed
     {
         $jwt = $jwt ?? Craft::$app->getRequest()->getRequiredParam('jwt');
 
