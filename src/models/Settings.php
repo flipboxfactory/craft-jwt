@@ -74,7 +74,7 @@ class Settings extends Model
      *
      * @var int|null
      */
-    private ?int $identityTokenDuration;
+    private ?int $identityTokenDuration = null;
 
     /**
      * The default identity token duration.  Used if a session duration is set to anything less than 0.
@@ -103,7 +103,7 @@ class Settings extends Model
      *
      * @var int|null
      */
-    private ?int $routeTokenDuration;
+    private ?int $routeTokenDuration = null;
 
 
     /*******************************************

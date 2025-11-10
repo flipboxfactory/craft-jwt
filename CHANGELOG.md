@@ -1,6 +1,11 @@
 Changelog
 =========
 
+## 5.0.1 - 2025-11-10
+### Fixed
+- Throwing an exception if an identity token is requested without being logged in
+- Setting model typings
+
 ## 5.0.0 - 2025-10-30
 ### Added
 - Support for Craft v5

@@ -75,7 +75,7 @@ class Route extends Component
             ->withClaim(TokenHelper::CLAIM_CSRF, Craft::$app->getRequest()->getCsrfToken())
             ->withClaim(self::CLAIM_ROUTE, serialize($action));
 
-        if ($identity) {
+        if ($identity && $identity->getId()) {
             $builder->relatedTo($identity->getId());
         }
 

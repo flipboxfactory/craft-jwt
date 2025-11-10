@@ -11,6 +11,7 @@ namespace flipbox\craft\jwt\services;
 use Craft;
 use craft\elements\User;
 use craft\errors\SiteNotFoundException;
+use flipbox\craft\jwt\errors\IdentityNotFoundException;
 use flipbox\craft\jwt\helpers\TokenHelper;
 use flipbox\craft\jwt\helpers\UserHelper;
 use flipbox\craft\jwt\Jwt;
@@ -44,7 +45,7 @@ class Identity extends Component
     ): ?Token
     {
         if (null === ($identity = UserHelper::resolveUser($user))) {
-            $identity = new User();
+            throw new IdentityNotFoundException('Failed to find identity');
         }
 
         $now = new \DateTimeImmutable();
@@ -105,8 +106,8 @@ class Identity extends Component
      */
     public function validateToken(Token $token): bool
     {
-        if (null === ($identity = UserHelper::resolveUser($token->claims()->get(TokenHelper::CLAIM_IDENTITY)))) {
-            $identity = new User();
+        if (null === ($identity = $this.tokenIdentity($token))) {
+            throw new IdentityNotFoundException('Failed to find identity');
         }
 
         $validator = new Validator();
