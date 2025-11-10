@@ -47,7 +47,7 @@ class TokenHelper
     /**
      * The Identity claim identifier
      */
-    const CLAIM_IDENTITY = 'jti';
+    const CLAIM_IDENTITY = 'sub';
 
     /**
      * @param string $token

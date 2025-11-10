@@ -106,7 +106,7 @@ class Identity extends Component
      */
     public function validateToken(Token $token): bool
     {
-        if (null === ($identity = $this.tokenIdentity($token))) {
+        if (null === ($identity = $this->tokenIdentity($token))) {
             throw new IdentityNotFoundException('Failed to find identity');
         }
 
